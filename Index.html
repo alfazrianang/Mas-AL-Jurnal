@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>Mas Al Garden Journal</title>
+<meta name="theme-color" content="#0d1f0d" />
+<style>
+  html,body{margin:0;padding:0;background:#0d1f0d;}
+  #root{min-height:100vh;}
+  * { -webkit-tap-highlight-color: transparent; }
+  #fallback{display:none;color:#e8f5e9;font-family:system-ui,sans-serif;padding:28px 20px;line-height:1.6;max-width:420px;margin:0 auto;}
+  #fallback h2{color:#81c784;font-size:17px;}
+  #fallback ol{padding-left:20px;}
+  #fallback li{margin-bottom:8px;font-size:14px;}
+  #loading{color:#81c784;font-family:system-ui,sans-serif;text-align:center;padding-top:60px;font-size:14px;}
+</style>
+</head>
+<body>
+<div id="loading">Memuat Mas Al Garden Journal…</div>
+<div id="root"></div>
+<div id="fallback">
+  <h2>⚠️ Gagal memuat aplikasi</h2>
+  <p>Komponen React/Babel gagal di-load. Kemungkinan penyebab:</p>
+  <ol>
+    <li>HP belum terhubung ke internet/WiFi saat membuka file ini (perlu sekali saat pertama buka)</li>
+    <li>Koneksi data/WiFi memblokir cdnjs.cloudflare.com</li>
+    <li>Browser memblokir script (mode Lite/Data Saver aktif)</li>
+  </ol>
+  <p>Coba: nyalakan WiFi/data, matikan Data Saver, lalu refresh halaman ini.</p>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js" onerror="window.__loadFail=true"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js" onerror="window.__loadFail=true"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.28.4/babel.min.js" onerror="window.__loadFail=true"></script>
+<script>
+  setTimeout(function(){
+    if (window.__loadFail || typeof React === "undefined" || typeof ReactDOM === "undefined" || typeof Babel === "undefined") {
+      document.getElementById("loading").style.display = "none";
+      document.getElementById("fallback").style.display = "block";
+    }
+  }, 6000);
+</script>
+<script type="text/babel" data-presets="react">
+const { useState, useEffect } = React;
+
+
+const SESSIONS = [
+  { id:"s1", label:"Sesi 1", startDate:"2026-06-05", polybag:3,  biji:2, color:"#e8633a", colorDark:"#a33d1e" },
+  { id:"s2", label:"Sesi 2", startDate:"2026-06-18", polybag:23, biji:2, color:"#5cb85c", colorDark:"#2e7d32" },
+];
+
+const PHASES = [
+  { name:"Perkecambahan",        emoji:"🌱", range:[0,7],    color:"#a8d5a2" },
+  { name:"Bibit Awal",           emoji:"🌿", range:[8,21],   color:"#66bb6a" },
+  { name:"Pertumbuhan Vegetatif",emoji:"🍃", range:[22,55],  color:"#4caf50" },
+  { name:"Pembungaan",           emoji:"🌸", range:[56,85],  color:"#ffa726" },
+  { name:"Pembuahan",            emoji:"🌶️", range:[86,120], color:"#ef5350" },
+  { name:"Panen",                emoji:"🎉", range:[121,999],color:"#c0392b" },
+];
+
+const PHASE_TUTORIALS = {
+  0:  { title:"Perkecambahan (Hari 0–7)", steps:[
+    {icon:"💧",label:"Penyiraman",       detail:"2x sehari — pagi 06.00–07.00 & sore 16.00–17.00. Pakai spray bottle halus. Tanah cukup lembab, bukan basah kuyup."},
+    {icon:"☀️",label:"Cahaya",            detail:"Tempat terang tidak langsung kena matahari penuh. Ideal 4–5 jam cahaya pagi. Grow light: 12–14 jam/hari."},
+    {icon:"🌡️",label:"Suhu & Kelembaban",detail:"Suhu ideal 25–30°C. Tutup permukaan dengan plastik bening, buka sedikit tiap pagi agar tidak pengap."},
+    {icon:"🌱",label:"Media Semai",       detail:"Sekam bakar + cocopeat / tanah halus. Tanam biji 0.5–1 cm, jangan terlalu dalam."},
+    {icon:"🚫",label:"Hindari",           detail:"Jangan pupuk dulu. Siram berlebih → busuk akar (damping off). Cukup jaga kelembaban saja."},
+  ]},
+  8:  { title:"Bibit Awal (Hari 8–21)", steps:[
+    {icon:"💧",label:"Penyiraman",     detail:"2x sehari pagi & sore. Volume lebih banyak, pakai gembor kecil. Jika tanah masih lembab, skip sore."},
+    {icon:"☀️",label:"Cahaya",          detail:"Kenalkan matahari langsung 2–3 jam pagi (07.00–09.00). Tingkatkan bertahap — hardening off."},
+    {icon:"🌿",label:"Pupuk Pertama",  detail:"Hari ke-14: pupuk cair NPK (Gandasil D) dosis 1/4 aturan pakai. Semprot ke daun seminggu sekali."},
+    {icon:"✂️",label:"Penjarangan",    detail:"Hari 18–21: jika 2 biji tumbuh per polybag, cabut yang lebih lemah. Pilih 1 bibit terkuat."},
+    {icon:"🔍",label:"Pantau Penyakit",detail:"Batang bawah menghitam & roboh = damping off. Cabut segera, semprot Dithane ke polybag sekitar."},
+  ]},
+  22: { title:"Vegetatif (Hari 22–55)", steps:[
+    {icon:"💧",label:"Penyiraman",         detail:"1–2x/hari sesuai cuaca. Kemarau: 2x. Hujan: 1x pagi atau skip. Volume: 150–200 ml/polybag."},
+    {icon:"🌿",label:"Pupuk NPK 16-16-16",detail:"Seminggu sekali tiap Senin pagi. 1 sdt (±5 g)/polybag, larutkan 1 liter air untuk 5 polybag."},
+    {icon:"🍃",label:"Pupuk Daun",         detail:"Gandasil D (1 sdm per 14 liter air) tiap 10 hari. Semprot pagi sebelum 09.00 atau sore setelah 16.00."},
+    {icon:"✂️",label:"Pangkas Tunas V",    detail:"Hari 30–35: pangkas tunas ketiak daun di bawah cabang V utama. Gunting steril."},
+    {icon:"🪣",label:"Pindah Polybag",     detail:"Hari 21–28: pindah ke polybag ≥30 cm. Media: tanah+kompos+sekam (2:1:1). Siram 1 jam sebelum pindah."},
+    {icon:"🔍",label:"Pantau Hama",        detail:"Cek bawah daun tiap 3 hari. Waspada aphid & thrips. Semprot Pegasus/Confidor pagi hari."},
+  ]},
+  56: { title:"Pembungaan (Hari 56–85)", steps:[
+    {icon:"💧",label:"Penyiraman",       detail:"Konsisten 1–2x/hari. Kekurangan air → bunga rontok. Daun kering sebelum malam."},
+    {icon:"🌸",label:"Pupuk Bunga",      detail:"Ganti ke NPK 10-30-10 atau KCl 1/2 sdt/polybag/minggu. Kurangi nitrogen."},
+    {icon:"🍯",label:"Pupuk Daun Buah",  detail:"Gandasil B + ZPT Atonik tiap 7 hari, pagi jam 07.00–08.30."},
+    {icon:"🤝",label:"Bantu Penyerbukan",detail:"Tiap pagi goyangkan batang pelan agar serbuk sari jatuh ke putik."},
+    {icon:"🚫",label:"Hindari Pestisida",detail:"Stop pestisida saat bunga mekar. Kalau terpaksa, semprot sangat pagi atau malam."},
+    {icon:"🔍",label:"Busuk Bunga",      detail:"Bunga terus rontok? Semprot pupuk mikro CaB 1x/minggu."},
+  ]},
+  86: { title:"Pembuahan (Hari 86–120)", steps:[
+    {icon:"💧",label:"Penyiraman",     detail:"1–2x/hari konsisten. Kurang air → buah kecil & keriput."},
+    {icon:"🌶️",label:"Pupuk Buah",    detail:"NPK 6-30-30 atau KCl 1/2 sdt/polybag/minggu. Tambah ZnSO4+MgSO4 tiap 2 minggu."},
+    {icon:"🛡️",label:"Lalat Buah",    detail:"Pasang perangkap Metil Eugenol 1–2 buah. Semprot Sidametrin tiap 10 hari jika serangan berat."},
+    {icon:"☀️",label:"Sirkulasi Udara",detail:"Pangkas daun tua/kuning bawah agar udara lancar & cahaya masuk ke buah."},
+    {icon:"🔍",label:"Cek Antraknos", detail:"Bercak coklat/hitam cekung di buah = antraknos. Semprot Antracol/Score tiap 7 hari."},
+  ]},
+  121:{ title:"Panen (Hari 121+)", steps:[
+    {icon:"🎯",label:"Tanda Siap Panen",detail:"Merah: warna merata, keras-kenyal. Hijau: ukuran max, hijau tua mengkilap."},
+    {icon:"✂️",label:"Cara Panen",      detail:"Gunting di pangkal tangkai, jangan dicabut. Panen pagi setelah embun kering."},
+    {icon:"🔄",label:"Jadwal Panen",    detail:"Tiap 3–5 hari. Makin sering dipetik, makin banyak buah baru."},
+    {icon:"🌿",label:"Pasca Panen",     detail:"Beri NPK 16-16-16 + kompos. Pangkas ranting kering untuk dorong buah berikutnya."},
+    {icon:"📦",label:"Penyimpanan",     detail:"Segar: 3–5 hari suhu ruang, 2 minggu kulkas. Freezer: blender dulu."},
+  ]},
+};
+
+const DAILY_MILESTONES = {
+  0:"🌱 Hari tanam! Dokumentasikan dari awal.",
+  5:"👀 Pantau retakan tanah — tanda biji mau berkecambah!",
+  7:"📊 Hitung polybag yang sudah berkecambah.",
+  10:"🍃 Kotiledon terbuka, daun sejati pertama keluar.",
+  14:"💊 Mulai pupuk daun encer. Foto & bandingkan dengan hari-1!",
+  18:"✂️ Penjarangan: pilih 1 bibit terkuat per polybag.",
+  21:"🪣 3 minggu! Bibit siap pindah ke polybag besar.",
+  25:"🏠 Repot ke polybag besar, lakukan pagi hari.",
+  30:"🌿 Pupuk NPK 16-16-16 pertama!",
+  35:"✂️ Pangkas tunas V — fokus energi ke batang utama.",
+  45:"📏 Tanaman harusnya 30–50 cm. Pasang ajir jika perlu.",
+  60:"🌸 Bunga pertama! Goyangkan batang tiap pagi.",
+  75:"🍯 Bunga lebat? Semprot CaB jika banyak yang rontok.",
+  90:"🌶️ Buah muda membesar! Jaga dari lalat buah.",
+  115:"🎯 Warna buah mulai berubah. Siapkan gunting panen!",
+  120:"🎉 120 hari! Panen perdana — selamat bro!",
+};
+
+const HEALTH_OPTIONS = ["😊 Semua sehat","⚠️ Ada yang layu","🐛 Ada hama","💧 Kurang air","🍂 Daun menguning"];
+const ACTIVITY_OPTIONS = ["💧 Siram","🌿 Pupuk NPK","🍃 Pupuk Daun","✂️ Pangkas","🔍 Pantau hama","🪣 Pindah polybag","🤝 Bantu penyerbukan","📸 Foto progress"];
+
+function getDayFor(s){const t=new Date();t.setHours(0,0,0,0);const d=new Date(s);d.setHours(0,0,0,0);return Math.floor((t-d)/86400000);}
+function getPhase(d){return PHASES.find(p=>d>=p.range[0]&&d<=p.range[1])||PHASES[PHASES.length-1];}
+function getTutorial(d){const ks=Object.keys(PHASE_TUTORIALS).map(Number).sort((a,b)=>a-b);let t=null;for(let k of ks)if(d>=k)t=PHASE_TUTORIALS[k];return t;}
+function getMilestone(d){return DAILY_MILESTONES[d]||null;}
+function fmtDate(s,o){const d=new Date(s);d.setDate(d.getDate()+o);return d.toLocaleDateString("id-ID",{weekday:"long",day:"numeric",month:"short",year:"numeric"});}
+function fmtShort(s){return new Date(s).toLocaleDateString("id-ID",{day:"numeric",month:"short",year:"numeric"});}
+
+const SK="cabai_v3";
+function load(){try{const r=localStorage.getItem(SK);return r?JSON.parse(r):{s1:{},s2:{}};}catch{return{s1:{},s2:{}};}}
+function save(d){try{localStorage.setItem(SK,JSON.stringify(d));}catch{}}
+
+// ── SVG LOGO M ────────────────────────────────────────────────────────────────
+function LogoM(){
+  return (
+    <svg width="90" height="90" viewBox="0 0 90 90" fill="none">
+      <defs>
+        <linearGradient id="mg1" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#e8633a"/>
+          <stop offset="100%" stopColor="#c0392b"/>
+        </linearGradient>
+        <linearGradient id="mg2" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#5cb85c"/>
+          <stop offset="100%" stopColor="#2e7d32"/>
+        </linearGradient>
+      </defs>
+      {/* M left leg */}
+      <path d="M8 72 L8 18 L24 18 L45 50 L66 18 L82 18 L82 72 L68 72 L68 40 L45 68 L22 40 L22 72 Z" fill="url(#mg1)" opacity="0.95"/>
+      {/* green leaf overlay on right leg */}
+      <path d="M66 18 L82 18 L82 72 L68 72 L68 36 Z" fill="url(#mg2)"/>
+      {/* chili on top right */}
+      <ellipse cx="77" cy="12" rx="4" ry="8" fill="#e8633a" transform="rotate(-30 77 12)"/>
+      <path d="M73 6 Q75 2 79 4" stroke="#5cb85c" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
+      {/* leaf left */}
+      <ellipse cx="18" cy="68" rx="7" ry="4" fill="#5cb85c" opacity="0.8" transform="rotate(-20 18 68)"/>
+    </svg>
+  );
+}
+
+// ── HEXAGON BG ────────────────────────────────────────────────────────────────
+function HexBg(){
+  const hexes=[];
+  for(let r=0;r<6;r++) for(let c=0;c<5;c++){
+    const x=c*70+(r%2)*35;
+    const y=r*62;
+    hexes.push(<polygon key={`${r}-${c}`} points="30,0 60,17 60,52 30,69 0,52 0,17" transform={`translate(${x},${y})`} fill="none" stroke="#3a7a3a" strokeWidth="1.1" opacity="0.4"/>);
+  }
+  return <svg style={{position:"absolute",top:0,left:0,width:"100%",height:"100%",pointerEvents:"none"}} viewBox="0 0 350 380" preserveAspectRatio="xMidYMid slice">{hexes}</svg>;
+}
+
+// ── FLOATING ICONS (droplet / chili / sun scattered like reference) ──────────
+function FloatingIcons(){
+  const items=[
+    {icon:"💧",top:8, left:6,  size:15,op:0.45},
+    {icon:"🌶️",top:22,left:18, size:16,op:0.4},
+    {icon:"🌶️",top:14,right:24,size:14,op:0.35},
+    {icon:"💧",top:30,right:6, size:18,op:0.4},
+    {icon:"☀️",bottom:14,left:4, size:20,op:0.35},
+    {icon:"🌶️",bottom:8, left:22,size:13,op:0.4},
+    {icon:"💧",bottom:22,left:38,size:12,op:0.35},
+    {icon:"☀️",bottom:10,right:8, size:18,op:0.35},
+    {icon:"🌶️",bottom:30,right:20,size:14,op:0.4},
+  ];
+  return (
+    <>
+      {items.map((it,i)=>(
+        <div key={i} style={{position:"absolute",top:it.top!==undefined?`${it.top}%`:undefined,bottom:it.bottom!==undefined?`${it.bottom}%`:undefined,left:it.left!==undefined?`${it.left}%`:undefined,right:it.right!==undefined?`${it.right}%`:undefined,fontSize:it.size,opacity:it.op,pointerEvents:"none",zIndex:1}}>
+          {it.icon}
+        </div>
+      ))}
+    </>
+  );
+}
+
+// ── TOGGLE SWITCH ─────────────────────────────────────────────────────────────
+function Toggle({checked,onChange,color="#2e7d32"}){
+  return (
+    <button onClick={()=>onChange(!checked)} aria-pressed={checked}
+      style={{width:46,height:26,borderRadius:14,border:"none",cursor:"pointer",position:"relative",background:checked?color:"#c8c8c8",transition:"background 0.2s",padding:0,flexShrink:0}}>
+      <span style={{position:"absolute",top:3,left:checked?23:3,width:20,height:20,borderRadius:"50%",background:"white",boxShadow:"0 1px 3px rgba(0,0,0,0.3)",transition:"left 0.2s"}}/>
+    </button>
+  );
+}
+
+function App(){
+  const [sessId,setSessId]=useState("s1");
+  const sess=SESSIONS.find(s=>s.id===sessId);
+  const todayDay=getDayFor(sess.startDate);
+  const [viewDay,setViewDay]=useState(todayDay);
+  const [allJ,setAllJ]=useState(load());
+  const [page,setPage]=useState("home"); // home | journal | stats | tutorial | history
+  const [note,setNote]=useState("");
+  const [health,setHealth]=useState("");
+  const [acts,setActs]=useState([]);
+  const [germ,setGerm]=useState("");
+  const [saved,setSaved]=useState(false);
+  const [expStep,setExpStep]=useState(null);
+  const [notif,setNotif]=useState(true);
+
+  const journal=allJ[sessId]||{};
+  const totalBiji=sess.polybag*sess.biji;
+  const phase=getPhase(todayDay);
+  const viewPhase=getPhase(viewDay);
+  const tutorial=getTutorial(viewDay);
+  const milestone=getMilestone(todayDay);
+  const pct=Math.min(100,Math.round((todayDay/120)*100));
+
+  useEffect(()=>{setSessId("s1");setPage("home");},[]);
+
+  useEffect(()=>{
+    setViewDay(todayDay);
+  },[sessId]);
+
+  useEffect(()=>{
+    const e=journal[viewDay]||{};
+    setNote(e.note||"");setHealth(e.health||"");setActs(e.activities||[]);
+    setGerm(e.germCount!==undefined?String(e.germCount):"");setSaved(false);setExpStep(null);
+  },[viewDay,sessId]);
+
+  function togAct(a){setActs(p=>p.includes(a)?p.filter(x=>x!==a):[...p,a]);}
+  function handleSave(){
+    const u={...allJ,[sessId]:{...journal,[viewDay]:{note,health,activities:acts,germCount:germ!==""?Number(germ):undefined,savedAt:new Date().toISOString()}}};
+    setAllJ(u);save(u);setSaved(true);setTimeout(()=>setSaved(false),2500);
+  }
+
+  const histDays=Object.keys(journal).map(Number).sort((a,b)=>b-a);
+  const germN=germ!==""?Number(germ):null;
+  const germP=germN!==null?Math.round((germN/totalBiji)*100):null;
+
+  // ── COLORS ──
+  const C=sess.color;
+  const CD=sess.colorDark;
+
+  // ── BOTTOM NAV ──
+  const NAV=[
+    {key:"home",  icon:"🏠", label:"Home"},
+    {key:"journal",icon:"📋",label:"Journal"},
+    {key:"profile",icon:"👤",label:"Profile"},
+  ];
+
+  return (
+    <div style={{minHeight:"100vh",background:"#0d1f0d",color:"#e8f5e9",fontFamily:"'Segoe UI',system-ui,sans-serif",maxWidth:420,margin:"0 auto",position:"relative",overflow:"hidden"}}>
+
+      {/* ══ HOME PAGE ══════════════════════════════════════════════════════════ */}
+      {page==="home"&&(
+        <div style={{minHeight:"100vh",display:"flex",flexDirection:"column"}}>
+
+          {/* Hero header */}
+          <div style={{background:"linear-gradient(160deg,#0a2a0a 0%,#1a4a1a 40%,#0d3010 100%)",padding:"28px 20px 22px",position:"relative",overflow:"hidden"}}>
+            <HexBg/>
+            <FloatingIcons/>
+
+            {/* Title */}
+            <div style={{textAlign:"center",position:"relative",zIndex:2}}>
+              <div style={{fontSize:10,letterSpacing:6,color:"#4a8a4a",fontFamily:"Georgia,serif",marginBottom:2}}>— GARDEN JOURNAL —</div>
+              <div style={{fontFamily:"Georgia,'Times New Roman',serif",fontSize:30,fontWeight:900,background:"linear-gradient(135deg,#c8e6c9,#ffffff,#a5d6a7)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text",letterSpacing:3,lineHeight:1.1}}>MAS AL</div>
+              <div style={{fontFamily:"Georgia,serif",fontSize:11,letterSpacing:5,color:"#81c784",fontWeight:400,marginTop:1}}>CHILI DAILY JOURNAL</div>
+            </div>
+
+            {/* Logo M */}
+            <div style={{display:"flex",justifyContent:"center",margin:"12px 0 4px",position:"relative",zIndex:2}}>
+              <LogoM/>
+            </div>
+            <div style={{textAlign:"center",position:"relative",zIndex:2}}>
+              <div style={{fontFamily:"Georgia,serif",fontSize:16,fontWeight:700,color:"#e8633a",letterSpacing:2}}>MAS AL</div>
+              <div style={{fontFamily:"Georgia,serif",fontSize:12,fontWeight:600,color:"#5cb85c",letterSpacing:2,marginTop:1}}>GARDEN JOURNAL</div>
+              <div style={{fontSize:9,letterSpacing:3,color:"#81c784",marginTop:1}}>CHILI DAILY PROGRESS</div>
+            </div>
+          </div>
+
+          {/* Progress section */}
+          <div style={{background:"#122012",padding:"14px 16px",borderBottom:"1px solid #1e3a1e"}}>
+            {/* Session pills */}
+            <div style={{display:"flex",gap:8,marginBottom:12}}>
+              {SESSIONS.map(s=>{
+                const sd=getDayFor(s.startDate);const sp=getPhase(sd);
+                const active=s.id===sessId;
+                return(
+                  <button key={s.id} onClick={()=>setSessId(s.id)}
+                    style={{flex:1,padding:"8px 10px",borderRadius:10,border:`2px solid ${active?s.color:"#2a4a2a"}`,background:active?s.colorDark+"bb":"#0f2a0f",cursor:"pointer",textAlign:"left",transition:"all 0.2s"}}>
+                    <div style={{fontSize:12,fontWeight:700,color:active?s.color:"#5a8a5a"}}>{s.label}</div>
+                    <div style={{fontSize:10,color:active?"#c8e6c9":"#3a6a3a",marginTop:2}}>{fmtShort(s.startDate)} · {s.polybag} polybag</div>
+                    <div style={{fontSize:10,color:active?sp.color:"#3a6a3a"}}>{sp.emoji} {sp.name}</div>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Progress bar */}
+            <div style={{display:"flex",justifyContent:"space-between",fontSize:11,marginBottom:5}}>
+              <span style={{color:C,fontWeight:700}}>{sess.label} (Hari {todayDay})</span>
+              <span style={{color:"#81c784"}}>Target <span style={{color:"#ffeb3b",fontWeight:700}}>{pct}%</span> Menuju Panen</span>
+            </div>
+            <div style={{background:"#1a3a1a",borderRadius:8,height:12,overflow:"hidden",border:"1px solid #2a5a2a"}}>
+              <div style={{width:`${pct}%`,background:`linear-gradient(90deg,${C},#ffeb3b)`,height:"100%",borderRadius:8,transition:"width 0.6s",boxShadow:`0 0 8px ${C}80`}}/>
+            </div>
+          </div>
+
+          {/* Main cards */}
+          <div style={{padding:"14px 16px",flex:1}}>
+            {/* Today card + Kondisi */}
+            <div style={{display:"grid",gridTemplateColumns:"1.2fr 1fr",gap:10,marginBottom:12}}>
+              {/* Hari ini */}
+              <div style={{background:"#f5f0e8",borderRadius:14,padding:"13px 12px",color:"#1a1a1a"}}>
+                <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:8}}>
+                  <span style={{fontSize:18}}>📅</span>
+                  <span style={{fontWeight:700,fontSize:13,color:"#1a4a1a"}}>Hari Ini</span>
+                  <span style={{marginLeft:"auto",fontSize:14}}>🌶️</span>
+                </div>
+                <div style={{fontSize:11,fontWeight:700,color:"#1a3a1a",marginBottom:3}}>{fmtDate(sess.startDate,todayDay).split(",")[0]}, {fmtDate(sess.startDate,todayDay).split(",").slice(1).join(",")}</div>
+                <div style={{fontSize:11,color:"#2a5a2a",marginBottom:4}}>Fase Aktif: <strong style={{color:"#1a6a1a"}}>{phase.name}</strong></div>
+                {milestone&&<div style={{fontSize:10,color:"#5a3a1a",lineHeight:1.4,background:"#fff3e0",padding:"5px 7px",borderRadius:7,marginBottom:6}}>{milestone}</div>}
+                <button onClick={()=>setPage("journal")}
+                  style={{width:"100%",padding:"7px",background:"#1a5a1a",color:"white",border:"none",borderRadius:8,fontSize:11,fontWeight:700,cursor:"pointer",marginTop:4}}>
+                  Buka Jurnal →
+                </button>
+              </div>
+
+              {/* Kondisi tanaman */}
+              <div style={{background:`linear-gradient(145deg,#1a4a1a,#2a6a2a)`,borderRadius:14,padding:"13px 12px",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}>
+                <div style={{fontSize:36,marginBottom:6}}>🌱</div>
+                <div style={{fontWeight:700,fontSize:13,color:"#c8e6c9",marginBottom:8}}>Kondisi Tanaman</div>
+                {journal[todayDay]?.health ? (
+                  <div style={{fontSize:11,color:"#a5d6a7",textAlign:"center"}}>{journal[todayDay].health}</div>
+                ):(
+                  <div style={{display:"flex",flexDirection:"column",gap:5,width:"100%"}}>
+                    <div style={{display:"flex",alignItems:"center",gap:5,fontSize:11,color:"#69f0ae"}}>
+                      <span style={{width:6,height:6,borderRadius:"50%",background:"#4caf50",display:"inline-block"}}/>Sehat
+                    </div>
+                    <div style={{display:"flex",alignItems:"center",gap:5,fontSize:11,color:"#ffb74d"}}>
+                      <span style={{fontSize:12}}>🍂</span>Ada yang layu
+                    </div>
+                  </div>
+                )}
+                <button onClick={()=>setPage("journal")}
+                  style={{marginTop:8,padding:"5px 12px",background:"#0f2a0f",border:"1px solid #4caf50",color:"#69f0ae",borderRadius:20,fontSize:10,cursor:"pointer"}}>
+                  Update →
+                </button>
+              </div>
+            </div>
+
+            {/* 3 menu buttons */}
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10,marginBottom:12}}>
+              {[
+                {icon:"📖",label:"Riwayat",    sub:"",        onClick:()=>setPage("history"), bg:"linear-gradient(145deg,#a33d1e,#e8633a)"},
+                {icon:"💡",label:"Tutorial",   sub:`Fase: ${phase.name}`, onClick:()=>setPage("tutorial"), bg:"linear-gradient(145deg,#2a6a2a,#4caf50)"},
+                {icon:"📊",label:"Statistik",  sub:"",        onClick:()=>setPage("stats"),   bg:"linear-gradient(145deg,#a33d1e,#e8633a)"},
+              ].map(m=>(
+                <button key={m.label} onClick={m.onClick}
+                  style={{background:m.bg,border:"none",borderRadius:14,padding:"14px 8px",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:4}}>
+                  <span style={{fontSize:22}}>{m.icon}</span>
+                  <span style={{fontWeight:700,fontSize:12,color:"white"}}>{m.label}</span>
+                  {m.sub&&<span style={{fontSize:9,color:"rgba(255,255,255,0.8)",textAlign:"center"}}>{m.sub}</span>}
+                </button>
+              ))}
+            </div>
+
+            {/* Info box */}
+            <div style={{background:"#f5f0e8",borderRadius:14,padding:"13px 14px",color:"#1a1a1a"}}>
+              <div style={{display:"flex",alignItems:"center",gap:7,marginBottom:8}}>
+                <span style={{fontSize:16}}>ℹ️</span>
+                <span style={{fontWeight:700,fontSize:13}}>Info Tanaman</span>
+                <span style={{position:"absolute",right:30,fontSize:12}}>🌶️</span>
+              </div>
+              <div style={{marginBottom:8}}>
+                <select value={sessId} onChange={e=>setSessId(e.target.value)}
+                  style={{width:"100%",padding:"8px 12px",borderRadius:8,border:"1px solid #c8d8c8",fontSize:12,background:"white",color:"#1a1a1a",cursor:"pointer"}}>
+                  {SESSIONS.map(s=><option key={s.id} value={s.id}>{s.label} — {fmtShort(s.startDate)} · {s.polybag} polybag</option>)}
+                </select>
+              </div>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginBottom:10}}>
+                {[
+                  {label:"Polybag",value:sess.polybag},
+                  {label:"Total Biji",value:totalBiji},
+                  {label:"Hari ke-",value:todayDay},
+                  {label:"Fase",value:phase.name},
+                ].map(r=>(
+                  <div key={r.label} style={{background:"#e8f0e8",borderRadius:8,padding:"7px 9px"}}>
+                    <div style={{fontSize:9,color:"#4a7a4a"}}>{r.label}</div>
+                    <div style={{fontSize:12,fontWeight:700,color:"#1a4a1a"}}>{r.value}</div>
+                  </div>
+                ))}
+              </div>
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",borderTop:"1px solid #d8e4d8",paddingTop:9}}>
+                <div>
+                  <div style={{fontSize:12,fontWeight:700,color:"#1a3a1a"}}>Pengingat Harian</div>
+                  <div style={{fontSize:10,color:"#5a7a5a"}}>Notifikasi siram & catat jurnal</div>
+                </div>
+                <Toggle checked={notif} onChange={setNotif}/>
+              </div>
+            </div>
+          </div>
+
+          {/* Bottom nav */}
+          <div style={{display:"flex",background:"#0a1f0a",borderTop:"1px solid #1e3a1e",padding:"8px 0 4px",position:"sticky",bottom:0}}>
+            {NAV.map(n=>(
+              <button key={n.key} onClick={()=>setPage(n.key)}
+                style={{flex:1,background:"none",border:"none",cursor:"pointer",padding:"6px 0",display:"flex",flexDirection:"column",alignItems:"center",gap:2}}>
+                <span style={{fontSize:20}}>{n.icon}</span>
+                <span style={{fontSize:10,color:page===n.key?C:"#4a7a4a",fontWeight:page===n.key?700:400}}>{n.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ══ JOURNAL PAGE ═══════════════════════════════════════════════════════ */}
+      {page==="journal"&&(
+        <div style={{minHeight:"100vh",display:"flex",flexDirection:"column"}}>
+          <div style={{background:`linear-gradient(135deg,${CD},${C}99)`,padding:"14px 16px 12px",display:"flex",alignItems:"center",gap:10}}>
+            <button onClick={()=>setPage("home")} style={{background:"none",border:"none",color:"white",fontSize:20,cursor:"pointer",padding:0}}>←</button>
+            <div style={{flex:1}}>
+              <div style={{fontWeight:700,fontSize:16,color:"white"}}>📋 Jurnal Harian</div>
+              <div style={{fontSize:11,color:"rgba(255,255,255,0.8)"}}>{sess.label} · {fmtShort(sess.startDate)}</div>
+            </div>
+            <div style={{fontSize:11,background:"rgba(0,0,0,0.3)",padding:"4px 10px",borderRadius:10,color:"white"}}>H-{todayDay}</div>
+          </div>
+
+          <div style={{padding:"14px 16px",flex:1,overflowY:"auto"}}>
+            {/* Day nav */}
+            <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12,background:"#122012",borderRadius:12,padding:"10px 12px"}}>
+              <button onClick={()=>setViewDay(v=>Math.max(0,v-1))} style={{background:CD,border:"none",color:"white",borderRadius:8,padding:"5px 12px",cursor:"pointer",fontSize:15,fontWeight:700}}>‹</button>
+              <div style={{flex:1,textAlign:"center"}}>
+                <div style={{fontWeight:700,fontSize:14}}>Hari ke-{viewDay}</div>
+                <div style={{fontSize:10,color:"#81c784"}}>{fmtDate(sess.startDate,viewDay)}</div>
+                {viewDay===todayDay&&<div style={{fontSize:9,color:C,fontWeight:700}}>← Hari Ini</div>}
+              </div>
+              <button onClick={()=>setViewDay(v=>v+1)} style={{background:CD,border:"none",color:"white",borderRadius:8,padding:"5px 12px",cursor:"pointer",fontSize:15,fontWeight:700}}>›</button>
+            </div>
+
+            {/* Phase pill */}
+            <div style={{display:"flex",alignItems:"center",gap:8,background:"#1a2e1a",border:`1px solid ${viewPhase.color}50`,borderRadius:12,padding:"10px 13px",marginBottom:12}}>
+              <span style={{fontSize:22}}>{viewPhase.emoji}</span>
+              <div style={{flex:1}}>
+                <div style={{fontSize:10,color:"#81c784",letterSpacing:1}}>FASE AKTIF</div>
+                <div style={{fontWeight:800,fontSize:14,color:viewPhase.color}}>{viewPhase.name}</div>
+              </div>
+              <button onClick={()=>{setPage("tutorial");}} style={{background:"#0f2a0f",border:`1px solid ${viewPhase.color}60`,color:viewPhase.color,borderRadius:8,padding:"5px 10px",cursor:"pointer",fontSize:10}}>Tutorial →</button>
+            </div>
+
+            {/* Milestone */}
+            {getMilestone(viewDay)&&(
+              <div style={{background:"linear-gradient(135deg,#a33d1e,#bf5030)",borderRadius:12,padding:"10px 13px",marginBottom:12,display:"flex",gap:8,alignItems:"flex-start"}}>
+                <span style={{fontSize:18}}>🎯</span>
+                <div style={{fontSize:12,color:"white",lineHeight:1.5}}>{getMilestone(viewDay)}</div>
+              </div>
+            )}
+
+            {/* Germination */}
+            {viewDay<=14&&(
+              <div style={{background:"#182818",border:"1px solid #388e3c",borderRadius:12,padding:"12px 14px",marginBottom:12}}>
+                <div style={{fontSize:12,color:"#81c784",fontWeight:600,marginBottom:8}}>🌱 Biji berkecambah hari ini?</div>
+                <div style={{display:"flex",alignItems:"center",gap:10}}>
+                  <input type="number" min={0} max={totalBiji} value={germ} onChange={e=>setGerm(e.target.value)} placeholder="0"
+                    style={{width:60,padding:"8px",background:"#0d1a0d",border:"1px solid #2e7d32",color:"#e8f5e9",borderRadius:8,fontSize:16,textAlign:"center"}}/>
+                  <div style={{fontSize:12,color:"#a5d6a7",flex:1}}>dari <strong>{totalBiji}</strong> biji
+                    {germP!==null&&<span style={{color:"#69f0ae",fontWeight:700}}> → {germP}%</span>}
+                  </div>
+                </div>
+                {germP!==null&&<div style={{background:"#0d1a0d",borderRadius:6,height:7,marginTop:8}}><div style={{width:`${germP}%`,background:"linear-gradient(90deg,#4caf50,#69f0ae)",height:"100%",borderRadius:6}}/></div>}
+              </div>
+            )}
+
+            {/* Health */}
+            <div style={{marginBottom:12}}>
+              <div style={{fontSize:12,color:"#81c784",fontWeight:600,marginBottom:7}}>🏥 Kondisi Tanaman</div>
+              <div style={{display:"flex",flexWrap:"wrap",gap:7}}>
+                {HEALTH_OPTIONS.map(h=>(
+                  <button key={h} onClick={()=>setHealth(health===h?"":h)}
+                    style={{padding:"7px 12px",borderRadius:20,fontSize:12,cursor:"pointer",border:`1px solid ${health===h?C:"#2e4a2e"}`,background:health===h?CD:"#162016",color:health===h?C:"#a5d6a7",fontWeight:health===h?700:400}}>
+                    {h}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Activities */}
+            <div style={{marginBottom:12}}>
+              <div style={{fontSize:12,color:"#81c784",fontWeight:600,marginBottom:7}}>⚡ Aktivitas Hari Ini</div>
+              <div style={{display:"flex",flexWrap:"wrap",gap:7}}>
+                {ACTIVITY_OPTIONS.map(a=>(
+                  <button key={a} onClick={()=>togAct(a)}
+                    style={{padding:"7px 12px",borderRadius:20,fontSize:12,cursor:"pointer",border:`1px solid ${acts.includes(a)?C:"#2e4a2e"}`,background:acts.includes(a)?CD:"#162016",color:acts.includes(a)?C:"#a5d6a7",fontWeight:acts.includes(a)?700:400}}>
+                    {a}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Note */}
+            <div style={{marginBottom:14}}>
+              <div style={{fontSize:12,color:"#81c784",fontWeight:600,marginBottom:7}}>📝 Catatan</div>
+              <textarea value={note} onChange={e=>setNote(e.target.value)} placeholder="Tulis observasi lo hari ini..." rows={3}
+                style={{width:"100%",padding:"11px",background:"#0d1a0d",border:"1px solid #2e4a2e",color:"#e8f5e9",borderRadius:10,fontSize:13,resize:"vertical",lineHeight:1.5,boxSizing:"border-box"}}/>
+            </div>
+
+            <button onClick={handleSave}
+              style={{width:"100%",padding:"13px",background:saved?CD:`linear-gradient(135deg,${CD},${C})`,border:`1px solid ${C}`,color:"white",borderRadius:12,fontWeight:700,fontSize:15,cursor:"pointer",boxShadow:saved?"none":`0 4px 14px ${C}40`}}>
+              {saved?"✅ Tersimpan!":"💾 Simpan Jurnal"}
+            </button>
+            {journal[viewDay]?.savedAt&&<div style={{textAlign:"center",fontSize:11,color:C,marginTop:7}}>Update: {new Date(journal[viewDay].savedAt).toLocaleTimeString("id-ID")}</div>}
+          </div>
+
+          <div style={{display:"flex",background:"#0a1f0a",borderTop:"1px solid #1e3a1e",padding:"8px 0 4px",position:"sticky",bottom:0}}>
+            {NAV.map(n=>(
+              <button key={n.key} onClick={()=>setPage(n.key)}
+                style={{flex:1,background:"none",border:"none",cursor:"pointer",padding:"6px 0",display:"flex",flexDirection:"column",alignItems:"center",gap:2}}>
+                <span style={{fontSize:20}}>{n.icon}</span>
+                <span style={{fontSize:10,color:page===n.key?C:"#4a7a4a",fontWeight:page===n.key?700:400}}>{n.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ══ TUTORIAL PAGE ══════════════════════════════════════════════════════ */}
+      {page==="tutorial"&&(
+        <div style={{minHeight:"100vh",display:"flex",flexDirection:"column"}}>
+          <div style={{background:"linear-gradient(135deg,#1a4a1a,#2e7d32)",padding:"14px 16px 12px",display:"flex",alignItems:"center",gap:10}}>
+            <button onClick={()=>setPage("home")} style={{background:"none",border:"none",color:"white",fontSize:20,cursor:"pointer",padding:0}}>←</button>
+            <div style={{flex:1,fontWeight:700,fontSize:16,color:"white"}}>💡 Tutorial {phase.emoji}</div>
+            <div style={{fontSize:11,background:"rgba(0,0,0,0.3)",padding:"4px 10px",borderRadius:10,color:"white"}}>H-{todayDay}</div>
+          </div>
+
+          <div style={{padding:"14px 16px",flex:1,overflowY:"auto"}}>
+            {/* Day nav */}
+            <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:14,background:"#122012",borderRadius:12,padding:"10px 12px"}}>
+              <button onClick={()=>setViewDay(v=>Math.max(0,v-1))} style={{background:"#2e7d32",border:"none",color:"white",borderRadius:8,padding:"5px 12px",cursor:"pointer",fontSize:15}}>‹</button>
+              <div style={{flex:1,textAlign:"center"}}>
+                <div style={{fontWeight:700,fontSize:14}}>Hari ke-{viewDay}</div>
+                <div style={{fontSize:10,color:viewPhase.color}}>{viewPhase.emoji} {viewPhase.name}</div>
+              </div>
+              <button onClick={()=>setViewDay(v=>v+1)} style={{background:"#2e7d32",border:"none",color:"white",borderRadius:8,padding:"5px 12px",cursor:"pointer",fontSize:15}}>›</button>
+            </div>
+
+            {tutorial&&(
+              <div>
+                <div style={{background:`${viewPhase.color}18`,border:`1px solid ${viewPhase.color}50`,borderRadius:12,padding:"12px 14px",marginBottom:12}}>
+                  <div style={{fontWeight:700,fontSize:14,color:viewPhase.color}}>{viewPhase.emoji} {tutorial.title}</div>
+                  <div style={{fontSize:11,color:"#81c784",marginTop:3}}>Ketuk tiap langkah untuk detail lengkap</div>
+                </div>
+
+                {tutorial.steps.map((s,i)=>(
+                  <div key={i} style={{marginBottom:8}}>
+                    <button onClick={()=>setExpStep(expStep===i?null:i)}
+                      style={{width:"100%",background:expStep===i?"#1a3a1a":"#162016",border:`1px solid ${expStep===i?viewPhase.color+"60":"#2e4a2e"}`,borderRadius:expStep===i?"12px 12px 0 0":12,padding:"12px 14px",cursor:"pointer",display:"flex",alignItems:"center",gap:10,textAlign:"left"}}>
+                      <span style={{fontSize:20}}>{s.icon}</span>
+                      <div style={{flex:1,fontWeight:700,fontSize:13,color:expStep===i?viewPhase.color:"#c8e6c9"}}>{s.label}</div>
+                      <span style={{color:"#4a7a4a",fontSize:13}}>{expStep===i?"▲":"▼"}</span>
+                    </button>
+                    {expStep===i&&(
+                      <div style={{background:"#0f2a0f",border:`1px solid ${viewPhase.color}40`,borderTop:"none",borderRadius:"0 0 12px 12px",padding:"13px 14px"}}>
+                        <div style={{fontSize:13,color:"#dcedc8",lineHeight:1.7}}>{s.detail}</div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+
+                {/* Quick ref */}
+                <div style={{background:"#0f2216",border:"1px solid #1b5e20",borderRadius:12,padding:"13px",marginTop:6}}>
+                  <div style={{fontSize:12,color:"#69f0ae",fontWeight:700,marginBottom:9}}>⚡ Ringkasan Hari ke-{viewDay}</div>
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+                    {[
+                      {label:"Siram/hari",value:viewDay<=21?"2x (spray)":"1–2x"},
+                      {label:"Pupuk NPK",value:viewDay<14?"Belum":viewDay<22?"Cair encer":"Tiap Senin"},
+                      {label:"Pupuk Daun",value:viewDay<14?"Belum":"Tiap 10 hari"},
+                      {label:"Cek Hama",value:viewDay<8?"Belum perlu":"Tiap 3 hari"},
+                    ].map(r=>(
+                      <div key={r.label} style={{background:"#1a2e1a",borderRadius:8,padding:"9px 10px"}}>
+                        <div style={{fontSize:10,color:"#81c784",marginBottom:2}}>{r.label}</div>
+                        <div style={{fontSize:13,fontWeight:700,color:"#c8e6c9"}}>{r.value}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div style={{display:"flex",background:"#0a1f0a",borderTop:"1px solid #1e3a1e",padding:"8px 0 4px",position:"sticky",bottom:0}}>
+            {NAV.map(n=>(
+              <button key={n.key} onClick={()=>setPage(n.key)}
+                style={{flex:1,background:"none",border:"none",cursor:"pointer",padding:"6px 0",display:"flex",flexDirection:"column",alignItems:"center",gap:2}}>
+                <span style={{fontSize:20}}>{n.icon}</span>
+                <span style={{fontSize:10,color:n.key==="home"&&page==="tutorial"?"#4a7a4a":page===n.key?C:"#4a7a4a",fontWeight:400}}>{n.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ══ HISTORY PAGE ═══════════════════════════════════════════════════════ */}
+      {page==="history"&&(
+        <div style={{minHeight:"100vh",display:"flex",flexDirection:"column"}}>
+          <div style={{background:`linear-gradient(135deg,${CD},${C}99)`,padding:"14px 16px 12px",display:"flex",alignItems:"center",gap:10}}>
+            <button onClick={()=>setPage("home")} style={{background:"none",border:"none",color:"white",fontSize:20,cursor:"pointer",padding:0}}>←</button>
+            <div style={{flex:1,fontWeight:700,fontSize:16,color:"white"}}>📖 Riwayat — {sess.label}</div>
+          </div>
+          <div style={{padding:"14px 16px",flex:1,overflowY:"auto"}}>
+            {histDays.length===0&&<div style={{color:"#4a7a4a",fontSize:13,textAlign:"center",marginTop:40}}>Belum ada catatan di sesi ini.</div>}
+            {histDays.map(d=>{
+              const e=journal[d];const ph=getPhase(d);const ms=getMilestone(d);
+              return(
+                <div key={d} style={{background:"#162016",border:"1px solid #2e4a2e",borderRadius:12,padding:"12px 14px",marginBottom:10}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:5}}>
+                    <span style={{fontWeight:700,color:ph.color}}>{ph.emoji} Hari ke-{d}</span>
+                    <span style={{fontSize:10,background:"#1b3a1b",padding:"2px 8px",borderRadius:10,color:"#a5d6a7"}}>{ph.name}</span>
+                  </div>
+                  <div style={{fontSize:10,color:"#81c784",marginBottom:4}}>{fmtDate(sess.startDate,d)}</div>
+                  {ms&&<div style={{fontSize:11,color:"#ffb74d",marginBottom:4}}>{ms}</div>}
+                  {e.health&&<div style={{fontSize:12,color:"#c8e6c9",marginBottom:3}}>{e.health}</div>}
+                  {e.activities?.length>0&&<div style={{fontSize:12,color:"#aed581",marginBottom:3}}>{e.activities.join(" · ")}</div>}
+                  {e.germCount!==undefined&&<div style={{fontSize:12,color:"#69f0ae",marginBottom:3}}>🌱 {e.germCount}/{totalBiji} biji berkecambah</div>}
+                  {e.note&&<div style={{fontSize:12,color:"#757575",fontStyle:"italic",borderTop:"1px solid #1b3a1b",paddingTop:5,marginTop:4}}>"{e.note}"</div>}
+                </div>
+              );
+            })}
+          </div>
+          <div style={{display:"flex",background:"#0a1f0a",borderTop:"1px solid #1e3a1e",padding:"8px 0 4px",position:"sticky",bottom:0}}>
+            {NAV.map(n=>(
+              <button key={n.key} onClick={()=>setPage(n.key)}
+                style={{flex:1,background:"none",border:"none",cursor:"pointer",padding:"6px 0",display:"flex",flexDirection:"column",alignItems:"center",gap:2}}>
+                <span style={{fontSize:20}}>{n.icon}</span>
+                <span style={{fontSize:10,color:"#4a7a4a"}}>{n.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ══ PROFILE PAGE ════════════════════════════════════════════════════════ */}
+      {page==="profile"&&(
+        <div style={{minHeight:"100vh",display:"flex",flexDirection:"column"}}>
+          <div style={{background:"linear-gradient(135deg,#1a4a1a,#2e7d32)",padding:"22px 16px 18px",display:"flex",flexDirection:"column",alignItems:"center",gap:8,position:"relative",overflow:"hidden"}}>
+            <HexBg/>
+            <div style={{position:"relative",zIndex:2,transform:"scale(0.7)"}}><LogoM/></div>
+            <div style={{fontFamily:"Georgia,serif",fontWeight:700,fontSize:16,color:"white",position:"relative",zIndex:2}}>Mas Al</div>
+            <div style={{fontSize:11,color:"#a5d6a7",position:"relative",zIndex:2}}>Chili Garden Journal</div>
+          </div>
+
+          <div style={{padding:"14px 16px",flex:1,overflowY:"auto"}}>
+            {/* Sessions overview */}
+            <div style={{fontSize:12,color:"#81c784",fontWeight:700,marginBottom:8}}>🌶️ Sesi Tanam</div>
+            <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:16}}>
+              {SESSIONS.map(s=>{
+                const sd=getDayFor(s.startDate);const sp=getPhase(sd);
+                return(
+                  <div key={s.id} style={{background:"#162016",border:`1px solid ${s.color}50`,borderRadius:12,padding:"11px 13px",display:"flex",alignItems:"center",gap:10}}>
+                    <span style={{fontSize:20}}>{sp.emoji}</span>
+                    <div style={{flex:1}}>
+                      <div style={{fontWeight:700,fontSize:13,color:s.color}}>{s.label}</div>
+                      <div style={{fontSize:10,color:"#81c784"}}>{fmtShort(s.startDate)} · {s.polybag} polybag · Hari ke-{sd}</div>
+                    </div>
+                    <span style={{fontSize:10,color:sp.color,background:"#0f2a0f",padding:"3px 8px",borderRadius:8}}>{sp.name}</span>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Settings */}
+            <div style={{fontSize:12,color:"#81c784",fontWeight:700,marginBottom:8}}>⚙️ Pengaturan</div>
+            <div style={{background:"#162016",border:"1px solid #2e4a2e",borderRadius:12,padding:"4px 13px",marginBottom:16}}>
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"11px 0",borderBottom:"1px solid #1e3a1e"}}>
+                <div>
+                  <div style={{fontSize:13,fontWeight:600,color:"#c8e6c9"}}>Pengingat Harian</div>
+                  <div style={{fontSize:10,color:"#5a8a5a"}}>Notifikasi siram & catat jurnal</div>
+                </div>
+                <Toggle checked={notif} onChange={setNotif}/>
+              </div>
+              <button onClick={()=>setPage("stats")} style={{width:"100%",background:"none",border:"none",cursor:"pointer",padding:"11px 0",display:"flex",alignItems:"center",gap:10,color:"#c8e6c9",fontSize:13,fontWeight:600,textAlign:"left"}}>
+                📊 <span style={{flex:1}}>Lihat Statistik</span> <span style={{color:"#4a7a4a"}}>›</span>
+              </button>
+            </div>
+
+            <div style={{textAlign:"center",fontSize:10,color:"#3a6a3a",marginTop:10}}>Mas Al Garden Journal · v1.0</div>
+          </div>
+
+          <div style={{display:"flex",background:"#0a1f0a",borderTop:"1px solid #1e3a1e",padding:"8px 0 4px",position:"sticky",bottom:0}}>
+            {NAV.map(n=>(
+              <button key={n.key} onClick={()=>setPage(n.key)}
+                style={{flex:1,background:"none",border:"none",cursor:"pointer",padding:"6px 0",display:"flex",flexDirection:"column",alignItems:"center",gap:2}}>
+                <span style={{fontSize:20}}>{n.icon}</span>
+                <span style={{fontSize:10,color:page===n.key?C:"#4a7a4a",fontWeight:page===n.key?700:400}}>{n.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ══ STATS PAGE ═════════════════════════════════════════════════════════ */}
+      {page==="stats"&&(
+        <div style={{minHeight:"100vh",display:"flex",flexDirection:"column"}}>
+          <div style={{background:"linear-gradient(135deg,#1a3a1a,#2e7d32)",padding:"14px 16px 12px",display:"flex",alignItems:"center",gap:10}}>
+            <button onClick={()=>setPage("home")} style={{background:"none",border:"none",color:"white",fontSize:20,cursor:"pointer",padding:0}}>←</button>
+            <div style={{flex:1,fontWeight:700,fontSize:16,color:"white"}}>📊 Statistik</div>
+          </div>
+          <div style={{padding:"14px 16px",flex:1,overflowY:"auto"}}>
+
+            {/* Perbandingan sesi */}
+            <div style={{background:"#162016",border:"1px solid #2e4a2e",borderRadius:12,padding:"13px",marginBottom:12}}>
+              <div style={{fontSize:12,color:"#81c784",fontWeight:600,marginBottom:10}}>⚖️ Perbandingan Sesi</div>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+                {SESSIONS.map(s=>{
+                  const sd=getDayFor(s.startDate);const sp=getPhase(sd);const sj=allJ[s.id]||{};
+                  return(
+                    <div key={s.id} style={{background:s.id===sessId?s.colorDark+"44":"#0f2a0f",border:`1px solid ${s.id===sessId?s.color:"#2e4a2e"}`,borderRadius:10,padding:"11px"}}>
+                      <div style={{fontWeight:700,fontSize:13,color:s.color,marginBottom:5}}>{s.label}</div>
+                      <div style={{fontSize:11,color:"#a5d6a7",marginBottom:1}}>📅 Hari ke-{sd}</div>
+                      <div style={{fontSize:11,color:sp.color,marginBottom:1}}>{sp.emoji} {sp.name}</div>
+                      <div style={{fontSize:11,color:"#81c784",marginBottom:1}}>🪣 {s.polybag} polybag</div>
+                      <div style={{fontSize:11,color:"#4caf50"}}>📖 {Object.keys(sj).length} jurnal</div>
+                      <div style={{background:"#1a3c1a",borderRadius:5,height:5,marginTop:7}}>
+                        <div style={{width:`${Math.min(100,Math.round((sd/120)*100))}%`,background:s.color,height:"100%",borderRadius:5}}/>
+                      </div>
+                      <div style={{fontSize:9,color:"#4a7a4a",marginTop:2}}>{Math.min(100,Math.round((sd/120)*100))}% menuju panen</div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Stat grid */}
+            <div style={{fontSize:12,color:C,fontWeight:700,marginBottom:8}}>{sess.label} — Detail</div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>
+              {[
+                {label:"Polybag",value:sess.polybag,unit:"polybag",emoji:"🪣"},
+                {label:"Total Biji",value:totalBiji,unit:"biji",emoji:"🌰"},
+                {label:"Hari Tanam",value:todayDay,unit:"hari",emoji:"📅"},
+                {label:"Jurnal Diisi",value:histDays.length,unit:"hari",emoji:"📖"},
+              ].map(s=>(
+                <div key={s.label} style={{background:"#162016",border:"1px solid #2e4a2e",borderRadius:12,padding:"13px 10px",textAlign:"center"}}>
+                  <div style={{fontSize:20}}>{s.emoji}</div>
+                  <div style={{fontSize:22,fontWeight:800,color:C}}>{s.value}</div>
+                  <div style={{fontSize:11,color:"#81c784"}}>{s.unit}</div>
+                  <div style={{fontSize:10,color:"#4a7a4a",marginTop:1}}>{s.label}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Timeline */}
+            <div style={{background:"#162016",border:"1px solid #2e4a2e",borderRadius:12,padding:"13px",marginBottom:12}}>
+              <div style={{fontSize:12,color:"#81c784",fontWeight:600,marginBottom:10}}>🗓️ Timeline Fase</div>
+              {PHASES.map((p,i)=>{
+                const isActive=todayDay>=p.range[0]&&todayDay<=p.range[1];const isPast=todayDay>p.range[1];
+                return(
+                  <div key={i} style={{display:"flex",alignItems:"center",gap:10,marginBottom:9,opacity:isPast?0.45:1}}>
+                    <span style={{fontSize:16,width:22}}>{p.emoji}</span>
+                    <div style={{flex:1}}>
+                      <div style={{fontSize:12,fontWeight:isActive?700:400,color:isActive?p.color:"#81c784"}}>
+                        {p.name} {isActive&&<span style={{fontSize:9,color:C}}>← Sekarang</span>}
+                      </div>
+                      <div style={{fontSize:10,color:"#4a7a4a"}}>Hari {p.range[0]}–{p.range[1]>200?"∞":p.range[1]}</div>
+                    </div>
+                    {isPast&&<span style={{fontSize:12}}>✅</span>}
+                    {isActive&&<div style={{width:7,height:7,borderRadius:"50%",background:p.color,boxShadow:`0 0 7px ${p.color}`}}/>}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Milestones berikutnya */}
+            <div style={{background:"#162016",border:"1px solid #2e4a2e",borderRadius:12,padding:"13px"}}>
+              <div style={{fontSize:12,color:"#81c784",fontWeight:600,marginBottom:10}}>🎯 Milestone Berikutnya</div>
+              {Object.entries(DAILY_MILESTONES).filter(([d])=>Number(d)>todayDay).slice(0,5).map(([d,m])=>(
+                <div key={d} style={{display:"flex",gap:10,marginBottom:9,alignItems:"flex-start"}}>
+                  <div style={{background:"#1b3a1b",borderRadius:8,padding:"3px 8px",fontSize:11,color:C,fontWeight:700,flexShrink:0}}>H-{Number(d)-todayDay}</div>
+                  <div style={{fontSize:12,color:"#c8e6c9",lineHeight:1.5}}><strong>Hari {d}:</strong> {m}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div style={{display:"flex",background:"#0a1f0a",borderTop:"1px solid #1e3a1e",padding:"8px 0 4px",position:"sticky",bottom:0}}>
+            {NAV.map(n=>(
+              <button key={n.key} onClick={()=>setPage(n.key)}
+                style={{flex:1,background:"none",border:"none",cursor:"pointer",padding:"6px 0",display:"flex",flexDirection:"column",alignItems:"center",gap:2}}>
+                <span style={{fontSize:20}}>{n.icon}</span>
+                <span style={{fontSize:10,color:page===n.key?C:"#4a7a4a",fontWeight:page===n.key?700:400}}>{n.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+    </div>
+  );
+}
+
+document.getElementById("loading").style.display = "none";
+const root = ReactDOM.createRoot(document.getElementById("root"));
+root.render(<App />);
+</script>
+</body>
+</html>
